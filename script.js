@@ -1,18 +1,26 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+// ================== TAILLE DYNAMIQUE ==================
+function resize() { 
+    canvas.width = window.innerWidth; 
+    canvas.height = window.innerHeight; 
+}
 window.addEventListener("resize", resize);
 resize();
 
+// ================== COULEURS ==================
 const BLACK="black", WHITE="white", RED="red", BLUE="blue", GREEN="green";
 
+// ================== AUDIO ==================
 const music = new Audio("retro-game-arcade-236133.mp3");
 music.loop = true;
 music.volume = 0.2;
+
 const gameOverSound = new Audio("dead-song.mp3");
 gameOverSound.volume = 0.5;
 
+// ================== ÉTATS ==================
 let gameState="menu"; // menu | skin | game | pause | settings
 let showSkinText=false;
 
@@ -22,23 +30,25 @@ let player={size:50, speed:6, x:canvas.width/2-25, y:canvas.height-100};
 let enemies=[], enemySize=50, enemySpeed=4, spawnTimer=0, score=0;
 let keys={};
 
-// INPUT
-document.addEventListener("keydown", e=>keys[e.key]=true);
-document.addEventListener("keyup", e=>keys[e.key]=false);
+// ================== INPUT ==================
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
 
-// UTILS
+// ================== UTILITAIRES ==================
 function enemyColor(){
     if(!PLAYER_COLOR) return BLUE;
     if(PLAYER_COLOR===RED) return BLUE;
     if(PLAYER_COLOR===BLUE) return GREEN;
     if(PLAYER_COLOR===GREEN) return RED;
 }
+
 function drawText(text,x,y,size=40,color=WHITE){
     ctx.fillStyle=color;
     ctx.font=`${size}px Arial`;
     ctx.textAlign="center";
     ctx.fillText(text,x,y);
 }
+
 function drawButton(text,x,y,w,h){
     ctx.fillStyle="#1e1e1e";
     ctx.fillRect(x,y,w,h);
@@ -50,9 +60,12 @@ function drawButton(text,x,y,w,h){
     ctx.textAlign="center";
     ctx.fillText(text,x+w/2,y+h/2+10);
 }
-function isInside(px,py,x,y,w,h){ return px>x && px<x+w && py>y && py<y+h; }
 
-// MENUS
+function isInside(px,py,x,y,w,h){
+    return px>x && px<x+w && py>y && py<y+h;
+}
+
+// ================== MENUS ==================
 function drawMenu(){
     ctx.fillStyle=BLACK;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -61,6 +74,7 @@ function drawMenu(){
     drawButton("SKIN",canvas.width/2-150,360,300,70);
     drawButton("PARAMÈTRES",canvas.width/2-150,460,300,70);
 }
+
 function drawSkinMenu(){
     ctx.fillStyle=BLACK;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -71,82 +85,103 @@ function drawSkinMenu(){
     if(showSkinText) drawText("Skin sélectionné ✔",canvas.width/2,canvas.height/2+150,30,GREEN);
     drawButton("RETOUR",20,20,140,50);
 }
+
 function drawSettingsMenu(){
     ctx.fillStyle=BLACK;
     ctx.fillRect(0,0,canvas.width,canvas.height);
     drawText("PARAMÈTRES",canvas.width/2,120,50);
     drawButton("RETOUR",20,20,140,50);
 }
+
 function drawPauseMenu(){
     drawText("PAUSE",canvas.width/2,canvas.height/2,60,WHITE);
     drawButton("Reprendre",canvas.width/2-100,canvas.height/2+80,200,50);
     drawButton("Menu",canvas.width/2-100,canvas.height/2+150,200,50);
 }
 
-// GAME
+// ================== GAME ==================
 function resetGame(){
     player.x=canvas.width/2-player.size/2;
     player.y=canvas.height-100;
     enemies=[]; score=0; spawnTimer=0;
 }
 
-function spawnEnemy(){ enemies.push({x:Math.random()*(canvas.width-enemySize),y:-enemySize}); }
+function spawnEnemy(){ 
+    enemies.push({x:Math.random()*(canvas.width-enemySize),y:-enemySize}); 
+}
 
 function updateGame(){
-    // mouvements
+    // déplacements joueur
     if(keys["ArrowLeft"]||keys["a"]||keys["q"]) player.x-=player.speed;
     if(keys["ArrowRight"]||keys["d"]) player.x+=player.speed;
     if(keys["ArrowUp"]||keys["w"]||keys["z"]) player.y-=player.speed;
     if(keys["ArrowDown"]||keys["s"]) player.y+=player.speed;
-    // limites
-    player.x=Math.max(0,Math.min(player.x,canvas.width-player.size));
-    player.y=Math.max(0,Math.min(player.y,canvas.height-player.size));
 
+    // limites map
+    player.x = Math.max(0, Math.min(player.x, canvas.width - player.size));
+    player.y = Math.max(0, Math.min(player.y, canvas.height - player.size));
+
+    // spawn ennemis
     spawnTimer++;
-    if(spawnTimer>60){ spawnEnemy(); spawnTimer=0; }
+    if(spawnTimer > 60){ spawnEnemy(); spawnTimer=0; }
 
-    ctx.fillStyle=BLACK; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // fond
+    ctx.fillStyle=BLACK;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // ennemis + collisions
-    enemies.forEach((e,i)=>{
-        e.y+=enemySpeed;
-        ctx.fillStyle=enemyColor();
-        ctx.fillRect(e.x,e.y,enemySize,enemySize);
+    // ennemis + collisions + score
+    for(let i = enemies.length - 1; i >= 0; i--){
+        let e = enemies[i];
+        e.y += enemySpeed;
+        ctx.fillStyle = enemyColor();
+        ctx.fillRect(e.x, e.y, enemySize, enemySize);
 
-        if(player.x<e.x+enemySize && player.x+player.size>e.x &&
-           player.y<e.y+enemySize && player.y+player.size>e.y){
-               gameState="menu"; enemies=[];
-               music.pause(); gameOverSound.play();
-           }
-        if(e.y>canvas.height) {
-    enemies.splice(i,1);
-    score++;
-}
+        // collision joueur
+        if(
+            player.x < e.x + enemySize &&
+            player.x + player.size > e.x &&
+            player.y < e.y + enemySize &&
+            player.y + player.size > e.y
+        ){
+            gameState = "menu";
+            enemies = [];
+            music.pause();
+            gameOverSound.play();
+        }
 
-    });
+        // ennemi sorti → supprimer + score
+        if(e.y > canvas.height){
+            enemies.splice(i,1);
+            score++;
+        }
+    }
 
     // joueur
-    ctx.fillStyle=PLAYER_COLOR;
-    ctx.fillRect(player.x,player.y,player.size,player.size);
+    ctx.fillStyle = PLAYER_COLOR;
+    ctx.fillRect(player.x, player.y, player.size, player.size);
 
-    drawButton("⏸ Pause",canvas.width-160,20,140,50);
+    // bouton pause
+    drawButton("⏸ Pause", canvas.width-160,20,140,50);
+
+    // score
     ctx.fillStyle=WHITE;
     ctx.font="26px Arial";
     ctx.textAlign="left";
     ctx.fillText("Score : "+score,20,40);
 }
 
-// CLICK
-canvas.addEventListener("click",e=>{
-    const x=e.clientX, y=e.clientY;
+// ================== CLICK ==================
+canvas.addEventListener("click", e=>{
+    const x = e.clientX, y = e.clientY;
 
+    // musique démarre au premier clic
     if(music.paused && gameState==="menu") music.play();
 
     if(gameState==="menu"){
         if(isInside(x,y,canvas.width/2-150,260,300,70)){ resetGame(); gameState="game"; music.play(); }
         if(isInside(x,y,canvas.width/2-150,360,300,70)) gameState="skin";
         if(isInside(x,y,canvas.width/2-150,460,300,70)) gameState="settings";
-    } 
+    }
     else if(gameState==="skin"){
         if(isInside(x,y,20,20,140,50)) gameState="menu";
         if(y>canvas.height/2-60 && y<canvas.height/2+60){
@@ -169,13 +204,14 @@ canvas.addEventListener("click",e=>{
     }
 });
 
-// LOOP
+// ================== LOOP ==================
 function loop(){
     if(gameState==="menu") drawMenu();
     else if(gameState==="skin") drawSkinMenu();
     else if(gameState==="settings") drawSettingsMenu();
     else if(gameState==="game") updateGame();
     else if(gameState==="pause") drawPauseMenu();
+
     requestAnimationFrame(loop);
 }
 
