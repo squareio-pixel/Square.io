@@ -56,7 +56,7 @@ function isInside(px,py,x,y,w,h){ return px>x && px<x+w && py>y && py<y+h; }
 function drawMenu(){
     ctx.fillStyle=BLACK;
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    drawText("ESQUIVE LES ENNEMIS",canvas.width/2,150,60);
+    drawText("Square.io",canvas.width/2,150,60);
     drawButton("JOUER",canvas.width/2-150,260,300,70);
     drawButton("SKIN",canvas.width/2-150,360,300,70);
     drawButton("PARAMÈTRES",canvas.width/2-150,460,300,70);
