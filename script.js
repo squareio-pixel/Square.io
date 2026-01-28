@@ -118,7 +118,11 @@ function updateGame(){
                gameState="menu"; enemies=[];
                music.pause(); gameOverSound.play();
            }
-        if(e.y>canvas.height) enemies.splice(i,1);
+        if(e.y>canvas.height) {
+    enemies.splice(i,1);
+    score++;
+}
+
     });
 
     // joueur
