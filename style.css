@@ -1,0 +1,16 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+}
+
+canvas {
+    display: block;
+}
+
+/* Optionnel pour hover style */
+.button-hover:hover {
+    background-color: #444 !important;
+    cursor: pointer;
+}
